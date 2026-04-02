@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frontier Transformation — Accelerating with Meghan</title>
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI', system-ui, -apple-system, sans-serif; background:#f3f2f1; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* Top bar */
+  .topbar { background:#fff; border-bottom:1px solid #e0e0e0; padding:10px 20px; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .topbar-title { flex:1; }
+  .topbar-title h1 { font-size:13px; font-weight:700; color:#201f1e; margin:0; }
+  .topbar-title p { font-size:10px; color:#a19f9d; margin:0; }
+  .topbar-divider { width:1px; height:16px; background:#e0e0e0; }
+  .topbar-tags { display:flex; gap:6px; }
+  .topbar-tag { background:#deecf9; color:#0078d4; font-size:10px; font-weight:700; padding:2px 8px; border-radius:2px; }
+
+  /* Slide nav */
+  .slide-nav { background:#fff; border-bottom:1px solid #e0e0e0; padding:0 20px; display:flex; overflow-x:auto; }
+  .slide-nav button { background:none; border:none; border-bottom:2px solid transparent; color:#605e5c; padding:10px 14px; font-size:12px; font-weight:400; cursor:pointer; white-space:nowrap; font-family:inherit; }
+  .slide-nav button.active { border-bottom-color:#0078d4; color:#0078d4; font-weight:700; }
+  .slide-nav button:hover { color:#0078d4; }
+
+  /* Main area */
+  .main { flex:1; padding:24px 20px 16px; display:flex; flex-direction:column; gap:16px; }
+  .slide-frame { border-radius:2px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06); }
+
+  /* Controls */
+  .controls { display:flex; justify-content:space-between; align-items:center; }
+  .btn { border-radius:2px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-prev { background:#fff; border:1px solid #e0e0e0; color:#201f1e; }
+  .btn-prev:disabled { color:#a19f9d; cursor:not-allowed; }
+  .btn-next { background:#0078d4; border:1px solid #0078d4; color:#fff; }
+  .btn-next:disabled { background:#fff; color:#a19f9d; cursor:not-allowed; }
+  .dots { display:flex; gap:6px; }
+  .dot { height:6px; border-radius:3px; background:#e0e0e0; cursor:pointer; transition:all 0.2s; width:6px; }
+  .dot.active { width:20px; background:#0078d4; }
+
+  /* Speaker notes */
+  .speaker-notes { background:#fff; border-radius:2px; padding:14px 18px; border:1px solid #e0e0e0; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+  .speaker-notes-label { color:#a19f9d; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .speaker-notes-text { color:#605e5c; font-size:13px; line-height:1.65; }
+
+  /* Slide shared */
+  .slide { min-height:420px; padding:32px 36px; }
+  .slide-tag { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+  .slide-title { color:#201f1e; font-weight:700; line-height:1.25; margin-bottom:8px; max-width:480px; }
+  .slide-subtitle { color:#605e5c; font-size:14px; line-height:1.7; max-width:500px; }
+
+  /* Card */
+  .card { background:#fff; border-radius:2px; padding:14px 16px; border:1px solid #e0e0e0; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+
+  /* Slide 1 hero */
+  .s1 { background:#0078d4; min-height:420px; display:flex; flex-direction:column; justify-content:center; padding:40px 40px 32px; }
+  .s1-tags { display:flex; gap:10px; margin-bottom:24px; }
+  .s1-tag { background:rgba(255,255,255,0.18); color:#fff; font-size:11px; font-weight:700; padding:3px 12px; border-radius:2px; border:1px solid rgba(255,255,255,0.3); }
+  .s1 .title { color:#fff; font-size:36px; font-weight:700; line-height:1.2; margin-bottom:16px; max-width:520px; }
+  .s1 .subtitle { color:rgba(255,255,255,0.88); font-size:16px; line-height:1.75; max-width:500px; margin-bottom:28px; }
+  .s1-quote { background:rgba(255,255,255,0.12); border-radius:2px; padding:12px 16px; border:1px solid rgba(255,255,255,0.2); display:inline-block; }
+  .s1-quote-src { color:rgba(255,255,255,0.7); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px; }
+  .s1-quote-text { color:#fff; font-size:14px; font-style:italic; }
+
+  /* Slide 2 */
+  .s2 { background:#faf9f8; }
+  .s2 .slide-tag { color:#a4262c; }
+  .s2 .slide-title { font-size:28px; }
+  .s2 .slide-subtitle { margin-bottom:28px; }
+  .gap-cards { display:flex; flex-direction:column; gap:14px; }
+  .gap-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+  .gap-pct { color:#a4262c; font-size:28px; font-weight:700; line-height:1; }
+  .gap-src { color:#a19f9d; font-size:11px; }
+  .gap-bar { height:5px; background:#fde7e9; border-radius:2px; overflow:hidden; margin-bottom:8px; }
+  .gap-bar-fill { height:100%; background:#a4262c; border-radius:2px; }
+  .gap-label { color:#323130; font-size:13px; line-height:1.5; }
+
+  /* Slide 3 */
+  .s3 { background:#faf9f8; }
+  .s3 .slide-tag { color:#107c10; }
+  .s3 .slide-title { font-size:26px; margin-bottom:24px; max-width:460px; }
+  .motion-cards { display:flex; flex-direction:column; gap:10px; }
+  .motion-card { border-left:3px solid #107c10; display:flex; gap:14px; align-items:flex-start; padding:13px 16px; }
+  .motion-icon { flex-shrink:0; text-align:center; min-width:52px; }
+  .motion-icon-emoji { font-size:20px; }
+  .motion-icon-day { color:#107c10; font-size:10px; font-weight:700; margin-top:2px; }
+  .motion-title { color:#201f1e; font-size:14px; font-weight:700; margin-bottom:3px; }
+  .motion-detail { color:#605e5c; font-size:12px; line-height:1.6; }
+
+  /* Slide 4 */
+  .s4 { background:#faf9f8; }
+  .s4 .slide-tag { color:#5c2d91; }
+  .s4 .slide-title { font-size:26px; max-width:460px; }
+  .s4 .slide-subtitle { margin-bottom:24px; }
+  .artifact-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .artifact-icon { font-size:22px; margin-bottom:8px; }
+  .artifact-title { color:#201f1e; font-size:13px; font-weight:700; margin-bottom:4px; }
+  .artifact-detail { color:#605e5c; font-size:12px; line-height:1.55; }
+
+  /* Slide 5 */
+  .s5 { background:#faf9f8; }
+  .s5 .slide-tag { color:#ca5010; }
+  .s5 .slide-title { font-size:26px; max-width:460px; }
+  .s5 .slide-subtitle { margin-bottom:22px; }
+  .ind-cards { display:flex; flex-direction:column; gap:10px; }
+  .ind-card { display:flex; justify-content:space-between; align-items:flex-start; padding:12px 14px; }
+  .ind-left { flex:1; }
+  .ind-header { display:flex; gap:6px; align-items:center; margin-bottom:4px; }
+  .ind-icon { font-size:16px; }
+  .ind-badge { font-size:10px; font-weight:700; padding:1px 7px; border-radius:2px; margin-left:4px; }
+  .ind-azure { color:#605e5c; font-size:11px; line-height:1.5; }
+  .ind-proof { color:#a19f9d; font-size:11px; text-align:right; margin-left:10px; flex-shrink:0; }
+
+  /* Slide 6 */
+  .s6 { background:#faf9f8; }
+  .s6 .slide-tag { color:#107c10; }
+  .s6 .slide-title { font-size:26px; }
+  .s6 .slide-subtitle { margin-bottom:24px; }
+  .outcome-cards { display:flex; flex-direction:column; gap:12px; }
+  .outcome-card { border-left:3px solid #107c10; display:flex; gap:16px; align-items:flex-start; padding:14px 16px; }
+  .outcome-num { color:#107c10; font-size:24px; font-weight:700; line-height:1; flex-shrink:0; min-width:64px; }
+  .outcome-label { color:#201f1e; font-size:13px; font-weight:700; margin-bottom:3px; }
+  .outcome-detail { color:#605e5c; font-size:12px; line-height:1.55; }
+
+  /* Slide 7 */
+  .s7 { background:#0078d4; min-height:420px; display:flex; flex-direction:column; justify-content:space-between; padding:40px 40px 36px; }
+  .s7 .slide-tag { color:rgba(255,255,255,0.75); }
+  .s7 .title { color:#fff; font-size:34px; font-weight:700; line-height:1.2; margin-bottom:16px; max-width:480px; }
+  .s7 .subtitle { color:rgba(255,255,255,0.88); font-size:16px; line-height:1.75; max-width:480px; margin-bottom:28px; }
+  .s7-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:480px; }
+  .s7-cell { background:rgba(255,255,255,0.12); border-radius:2px; padding:10px 14px; border:1px solid rgba(255,255,255,0.2); }
+  .s7-cell-label { color:rgba(255,255,255,0.65); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:3px; }
+  .s7-cell-value { color:#fff; font-size:13px; font-weight:600; }
+  .s7-footer { margin-top:28px; border-top:1px solid rgba(255,255,255,0.25); padding-top:20px; display:flex; justify-content:space-between; align-items:flex-end; }
+  .s7-name { color:#fff; font-size:15px; font-weight:700; }
+  .s7-role { color:rgba(255,255,255,0.8); font-size:13px; }
+  .s7-footer-tags { display:flex; gap:6px; }
+  .s7-footer-tag { background:rgba(255,255,255,0.15); color:#fff; font-size:10px; font-weight:700; padding:3px 10px; border-radius:2px; border:1px solid rgba(255,255,255,0.25); }
+
+  @media (max-width: 600px) {
+    .artifact-grid, .s7-grid { grid-template-columns:1fr; }
+    .topbar-tags { display:none; }
+    .s1 .title, .s7 .title { font-size:26px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <svg width="18" height="18" viewBox="0 0 18 18">
+    <rect x="0" y="0" width="7.5" height="7.5" fill="#F25022" rx="0.5"/>
+    <rect x="10" y="0" width="7.5" height="7.5" fill="#7FBA00" rx="0.5"/>
+    <rect x="0" y="10" width="7.5" height="7.5" fill="#00A4EF" rx="0.5"/>
+    <rect x="10" y="10" width="7.5" height="7.5" fill="#FFB900" rx="0.5"/>
+  </svg>
+  <div class="topbar-divider"></div>
+  <div class="topbar-title">
+    <h1>Frontier Transformation — Accelerating with Meghan</h1>
+    <p id="topbar-meta"></p>
+  </div>
+  <div class="topbar-tags">
+    <span class="topbar-tag">Frontier Transformation</span>
+    <span class="topbar-tag">Intelligence + Trust</span>
+    <span class="topbar-tag">Frontier Firms</span>
+  </div>
+</div>
+
+<!-- Slide Nav -->
+<div class="slide-nav" id="slideNav"></div>
+
+<!-- Main -->
+<div class="main">
+  <div class="slide-frame" id="slideContent"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-prev" id="prevBtn" onclick="go(-1)">← Previous</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn btn-next" id="nextBtn" onclick="go(1)">Next →</button>
+  </div>
+
+  <!-- Speaker Notes -->
+  <div class="speaker-notes">
+    <div class="speaker-notes-label">Speaker Note — Meghan</div>
+    <div class="speaker-notes-text" id="speakerNote"></div>
+  </div>
+</div>
+
+<script>
+const SLIDES = [
+  { id:1, label:"Vision" },
+  { id:2, label:"The Gap" },
+  { id:3, label:"The Motion" },
+  { id:4, label:"What Gets Built" },
+  { id:5, label:"At Scale" },
+  { id:6, label:"Why It Wins" },
+  { id:7, label:"The Ask" },
+];
+
+const SPEAKER_NOTES = [
+  "Open by naming the moment. Judson called it publicly at Ignite. This isn't inside language — it's the company's direction. Wade needs to own it in every customer conversation.",
+  "Don't skip this slide. Every customer Wade meets has stalled AI initiatives. This is their pain, in data. The conversation starts here.",
+  "Walk through the motion step by step. The key point: this compresses what normally takes 6–9 months of evaluation into 3 weeks. Microsoft's own Envisioning & POC framework validates this approach.",
+  "This is the differentiator. Every other vendor brings a deck. Meghan brings a product. Lead with: 'Before we talk about the contract, let me show you what it looks like.'",
+  "Show Wade that this isn't a one-customer play. Five industries. One repeatable motion. The same way Microsoft scales Azure — one playbook, infinite instantiations.",
+  "This is the business case for the motion. Faster deals, better governance, no extra pre-sales cost. Connect to Wade's quota and pipeline numbers directly.",
+  "Don't oversell. The ask is simple: put Meghan in the room. The next customer meeting is the proof of concept for the proof of concept.",
+];
+
+function slide1() {
+  return `<div class="s1">
+    <div class="s1-tags">
+      <span class="s1-tag">Frontier Transformation</span>
+      <span class="s1-tag">Intelligence + Trust</span>
+      <span class="s1-tag">Frontier Firms</span>
+    </div>
+    <div class="title">The Age of Frontier Firms Is Here.</div>
+    <div class="subtitle">Every industry is at an inflection point. The organizations that act now — with AI woven into every workflow, every decision, every customer touchpoint — become Frontier Firms. The rest get left behind.</div>
+    <div class="s1-quote">
+      <div class="s1-quote-src">Judson Althoff · Microsoft Ignite 2025</div>
+      <div class="s1-quote-text">"Every organization now has a choice: be disrupted by AI or become a Frontier Firm leading the disruption."</div>
+    </div>
+  </div>`;
+}
+
+function slide2() {
+  const gaps = [
+    { pct:73, label:"of enterprise AI initiatives stall before reaching production", src:"Gartner 2025" },
+    { pct:47, label:"of companies have not fully implemented data security controls for AI", src:"Microsoft 2026 Data Security Index" },
+    { pct:89, label:"of CIOs say governance gaps are their #1 AI adoption barrier", src:"IDC 2025" },
+  ];
+  return `<div class="slide s2">
+    <div class="slide-tag">The Problem</div>
+    <div class="slide-title">Transformation Stalls Without Trust.</div>
+    <div class="slide-subtitle">Most AI initiatives never make it to production. Not because the technology isn't ready — but because customers can't see it, test it, or defend it to their board. The gap between vision and outcome is where deals die.</div>
+    <div class="gap-cards">
+      ${gaps.map(g => `<div class="card">
+        <div class="gap-header">
+          <div class="gap-pct">${g.pct}%</div>
+          <div class="gap-src">${g.src}</div>
+        </div>
+        <div class="gap-bar"><div class="gap-bar-fill" style="width:${g.pct}%"></div></div>
+        <div class="gap-label">${g.label}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function slide3() {
+  const steps = [
+    { day:"Day 0", icon:"🤝", title:"Customer Meeting", detail:"Wade + Meghan in the room. Discovery, executive briefing, or envisioning session. Meghan captures the outcome targets, personas, blockers, and governance requirements in real time." },
+    { day:"Day 1", icon:"🗺️", title:"Envisioning Workshop", detail:"Meghan runs a structured workshop turning what we heard into a one-page blueprint — use cases, persona maps, outcome targets, trust requirements, and Azure workload recommendations. Aligned to Frontier Transformation language." },
+    { day:"Week 1", icon:"⚡", title:"MVP UX Built", detail:"A clickable, executive-grade prototype built in the customer's own language. Not a wireframe — a working experience that decision-makers can navigate. Grounded in Work IQ and Fabric IQ architecture from Day 1." },
+    { day:"Week 2", icon:"🧪", title:"User Testing", detail:"Real users. Real workflows. Meghan validates assumptions, pressure-tests the governance model, and surfaces blockers before they become contract issues. Customer executives react to something they can see and touch — not slides." },
+    { day:"Weeks 3–4", icon:"🚀", title:"Working Pilot — Live Backend", detail:"The MVP connects to Azure: AI Foundry, Copilot Studio, Microsoft Fabric, or the workload the customer needs. A functioning, governed proof of concept — before the contract is signed. When the deal closes, we're not starting. We're scaling." },
+  ];
+  return `<div class="slide s3">
+    <div class="slide-tag">Meghan's Frontier Transformation Motion</div>
+    <div class="slide-title">From Customer Meeting to Working Pilot in 3 Weeks.</div>
+    <div class="motion-cards">
+      ${steps.map(s => `<div class="card motion-card">
+        <div class="motion-icon">
+          <div class="motion-icon-emoji">${s.icon}</div>
+          <div class="motion-icon-day">${s.day}</div>
+        </div>
+        <div>
+          <div class="motion-title">${s.title}</div>
+          <div class="motion-detail">${s.detail}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function slide4() {
+  const artifacts = [
+    { icon:"🎯", title:"Executive-grade MVP UX", detail:"A clickable experience built in the customer's own language. Decision-makers navigate it — not a wireframe, a product." },
+    { icon:"🛡️", title:"Governance baked in from Day 0", detail:"Checkpoints, trust requirements, and responsible AI standards embedded before a single line of production code is written." },
+    { icon:"🔗", title:"Live Azure backend", detail:"AI Foundry, Copilot Studio, Microsoft Fabric — connected and running. Not a simulation. A functioning pilot." },
+    { icon:"📊", title:"Customer-validated outcomes", detail:"Real users tested it. Real executives reacted to it. The business case is already proven before the contract conversation starts." },
+  ];
+  return `<div class="slide s4">
+    <div class="slide-tag">Intelligence + Trust · Built In</div>
+    <div class="slide-title">Not a Deck. A Product.</div>
+    <div class="slide-subtitle">Every customer gets an executive-grade, clickable MVP grounded in their own workflows and Frontier Transformation architecture — connected to a live Azure backend before the contract is signed.</div>
+    <div class="artifact-grid">
+      ${artifacts.map(a => `<div class="card">
+        <div class="artifact-icon">${a.icon}</div>
+        <div class="artifact-title">${a.title}</div>
+        <div class="artifact-detail">${a.detail}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function slide5() {
+  const industries = [
+    { name:"Healthcare", icon:"🏥", clr:"#107c10", bg:"#dff6dd", useCase:"Clinical documentation AI + governance-first deployment", azure:"Azure AI Foundry · Fabric · Purview", proof:"Providence Health" },
+    { name:"Financial Services", icon:"🏦", clr:"#0078d4", bg:"#deecf9", useCase:"AI compliance agent + OCC/FINRA governance framework", azure:"Azure Confidential Computing · Purview · Sentinel", proof:"First National" },
+    { name:"Manufacturing", icon:"🏭", clr:"#5c2d91", bg:"#f2eafa", useCase:"Predictive maintenance AI + OT/IT integration", azure:"Azure Digital Twins · IoT Hub · AI Foundry", proof:"Contoso" },
+    { name:"Retail & Consumer", icon:"🛒", clr:"#ca5010", bg:"#fff4e5", useCase:"AI demand forecasting + customer personalization platform", azure:"Azure OpenAI · Fabric · Copilot Studio", proof:"Levi's" },
+    { name:"Energy & Utilities", icon:"⚡", clr:"#7a6000", bg:"#fff8c5", useCase:"Real-time carbon tracking + OT/IT AI operations", azure:"Sustainability Manager · Azure IoT · AI Foundry", proof:"Adatum Energy" },
+  ];
+  return `<div class="slide s5">
+    <div class="slide-tag">Repeatable · Scalable · Governed</div>
+    <div class="slide-title">One Motion. Five Industries. Every Major Account.</div>
+    <div class="slide-subtitle">The same presales-to-pilot playbook adapts to every industry — with industry-specific personas, governance models, and Azure workloads pre-built and ready to deploy.</div>
+    <div class="ind-cards">
+      ${industries.map(ind => `<div class="card ind-card" style="border-left:3px solid ${ind.clr}">
+        <div class="ind-left">
+          <div class="ind-header">
+            <span class="ind-icon">${ind.icon}</span>
+            <span style="color:${ind.clr};font-size:12px;font-weight:700">${ind.name}</span>
+            <span class="ind-badge" style="background:${ind.bg};color:${ind.clr}">${ind.useCase.split('+')[0].trim()}</span>
+          </div>
+          <div class="ind-azure"><strong>Azure: </strong>${ind.azure}</div>
+        </div>
+        <div class="ind-proof">${ind.proof}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function slide6() {
+  const outcomes = [
+    { num:"3–4x", label:"faster deal velocity", detail:"Customers who experience a working pilot before contract close move from evaluation to signature 3–4x faster than traditional RFP/POC cycles." },
+    { num:"100%", label:"governance coverage from Day 0", detail:"Every pilot is built on Microsoft's Responsible AI and Frontier Transformation governance model — ready for board scrutiny before the ink dries." },
+    { num:"$0", label:"additional pre-sales cost", detail:"The pilot is built during the pre-sales motion. No separate services engagement. No extra budget. The MVP is the business case." },
+  ];
+  return `<div class="slide s6">
+    <div class="slide-tag">Frontier Firms Are Built This Way</div>
+    <div class="slide-title">The POC Becomes the Proposal. The Pilot Becomes the Proof.</div>
+    <div class="slide-subtitle">When a customer can see it, touch it, and test it before signing — the deal closes faster, the governance conversation is already done, and the expansion motion starts on Day 1 of the contract.</div>
+    <div class="outcome-cards">
+      ${outcomes.map(o => `<div class="card outcome-card">
+        <div class="outcome-num">${o.num}</div>
+        <div>
+          <div class="outcome-label">${o.label}</div>
+          <div class="outcome-detail">${o.detail}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function slide7() {
+  const cells = [
+    ["Day 0","In the room with you"],["Day 1","Blueprint in hand"],
+    ["Week 1","MVP UX built"],["Week 2","User-tested"],
+    ["Weeks 3–4","Live pilot — Azure connected"],["Contract signed","We're scaling, not starting"]
+  ];
+  return `<div class="s7">
+    <div>
+      <div class="slide-tag" style="color:rgba(255,255,255,0.75)">The Ask</div>
+      <div class="title">Let Me Run This Motion With You.</div>
+      <div class="subtitle">Put me in the room. I'll turn the next customer conversation into a working pilot — and a Frontier Firm.</div>
+      <div class="s7-grid">
+        ${cells.map(([d,v]) => `<div class="s7-cell">
+          <div class="s7-cell-label">${d}</div>
+          <div class="s7-cell-value">${v}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="s7-footer">
+      <div>
+        <div class="s7-name">Meghan Fasano</div>
+        <div class="s7-role">Communications, CX &amp; AI GTM · Office of the USCI CTO</div>
+      </div>
+      <div class="s7-footer-tags">
+        <span class="s7-footer-tag">Frontier Transformation</span>
+        <span class="s7-footer-tag">Intelligence + Trust</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+const SLIDE_RENDERERS = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
+let current = 0;
+
+function render() {
+  // Top bar meta
+  document.getElementById('topbar-meta').textContent =
+    `Office of the USCI CTO · ${SLIDES[current].label} · Slide ${current+1} of ${SLIDES.length}`;
+
+  // Nav tabs
+  const nav = document.getElementById('slideNav');
+  nav.innerHTML = SLIDES.map((s,i) =>
+    `<button class="${i===current?'active':''}" onclick="goTo(${i})">${i+1}. ${s.label}</button>`
+  ).join('');
+
+  // Slide content
+  document.getElementById('slideContent').innerHTML = SLIDE_RENDERERS[current]();
+
+  // Dots
+  document.getElementById('dots').innerHTML = SLIDES.map((_,i) =>
+    `<div class="dot ${i===current?'active':''}" onclick="goTo(${i})"></div>`
+  ).join('');
+
+  // Buttons
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  prevBtn.disabled = current === 0;
+  nextBtn.disabled = current === SLIDES.length - 1;
+
+  // Speaker note
+  document.getElementById('speakerNote').textContent = SPEAKER_NOTES[current];
+}
+
+function goTo(i) { current = i; render(); }
+function go(dir) {
+  current = Math.max(0, Math.min(SLIDES.length - 1, current + dir));
+  render();
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
